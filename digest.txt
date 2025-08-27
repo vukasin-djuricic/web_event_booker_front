@@ -1,0 +1,798 @@
+Directory structure:
+└── web_event_booker_front/
+    ├── README.md
+    ├── eslint.config.js
+    ├── index.html
+    ├── package.json
+    ├── vite.config.js
+    └── src/
+        ├── App.css
+        ├── App.jsx
+        ├── index.css
+        ├── main.jsx
+        ├── components/
+        │   ├── EventCard.css
+        │   ├── EventCard.jsx
+        │   ├── Navbar.css
+        │   ├── Navbar.jsx
+        │   └── ProtectedRoute.jsx
+        ├── context/
+        │   └── AuthContext.jsx
+        ├── pages/
+        │   ├── AdminUsersPage.jsx
+        │   ├── CategoriesPage.jsx
+        │   ├── DashboardPage.jsx
+        │   ├── EventDetailsPage.jsx
+        │   ├── EventsPage.jsx
+        │   ├── Form.css
+        │   ├── HomePage.jsx
+        │   └── LoginPage.jsx
+        └── services/
+            └── api.js
+
+================================================
+FILE: README.md
+================================================
+# React + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+
+
+================================================
+FILE: eslint.config.js
+================================================
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs['recommended-latest'],
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+])
+
+
+
+================================================
+FILE: index.html
+================================================
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+
+
+================================================
+FILE: package.json
+================================================
+{
+  "name": "web_event_booker_front",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "jwt-decode": "^4.0.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.8.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "vite": "^7.1.2"
+  }
+}
+
+
+
+================================================
+FILE: vite.config.js
+================================================
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})
+
+
+
+================================================
+FILE: src/App.css
+================================================
+/* src/App.css */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+}
+
+/* Stil za listu događaja na početnoj strani */
+.events-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+
+================================================
+FILE: src/App.jsx
+================================================
+// src/App.jsx
+
+import { Routes, Route } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import EventDetailsPage from './pages/EventDetailsPage';
+import LoginPage from './pages/LoginPage';
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+
+// Stranice koje ćemo sada kreirati
+import DashboardPage from './pages/DashboardPage';
+import CategoriesPage from './pages/CategoriesPage';
+import EventsPage from './pages/EventsPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import Navbar from "./components/Navbar.jsx"; // Dodajemo i Navbar
+import './App.css';
+
+function App() {
+    return (
+        <>
+            <Navbar /> {/* Prikazuje meni na svim stranicama */}
+            <main className="container">
+                <Routes>
+                    {/* Javne Rute */}
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/events/:id" element={<EventDetailsPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+
+                    {/* EMS Rute (zaštićene) */}
+                    <Route path="/dashboard" element={
+                        <ProtectedRoute allowedRoles={['ADMIN', 'EVENT_CREATOR']}>
+                            <DashboardPage />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/categories" element={
+                        <ProtectedRoute allowedRoles={['ADMIN', 'EVENT_CREATOR']}>
+                            <CategoriesPage />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/events-management" element={
+                        <ProtectedRoute allowedRoles={['ADMIN', 'EVENT_CREATOR']}>
+                            <EventsPage />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/users" element={
+                        <ProtectedRoute allowedRoles={['ADMIN']}>
+                            <AdminUsersPage />
+                        </ProtectedRoute>
+                    } />
+                </Routes>
+            </main>
+        </>
+    );
+}
+
+export default App;
+
+
+================================================
+FILE: src/index.css
+================================================
+/* src/index.css */
+
+:root {
+    --primary-color: #007bff;
+    --primary-hover-color: #0056b3;
+    --background-color: #f4f4f9;
+    --text-color: #212529;
+    --card-background: #ffffff;
+    --border-color: #dee2e6;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+    line-height: 1.6;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: var(--primary-hover-color);
+}
+
+button {
+    cursor: pointer;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid var(--primary-color);
+    background-color: var(--primary-color);
+    color: white;
+    transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+    background-color: var(--primary-hover-color);
+    border-color: var(--primary-hover-color);
+}
+
+h1, h2, h3 {
+    margin-bottom: 1rem;
+}
+
+
+================================================
+FILE: src/main.jsx
+================================================
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App.jsx';
+import './index.css';
+import {AuthProvider} from "./context/AuthContext.jsx";
+
+createRoot(document.getElementById('root')).render(
+    <StrictMode>
+        <BrowserRouter>
+            <AuthProvider>
+                <App />
+            </AuthProvider>
+        </BrowserRouter>
+    </StrictMode>,
+);
+
+
+================================================
+FILE: src/components/EventCard.css
+================================================
+/* src/components/EventCard.css */
+
+.card {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 10px var(--shadow-color);
+}
+
+.card h2 {
+    font-size: 1.25rem;
+    margin-top: 0;
+}
+
+.card p {
+    flex-grow: 1; /* Omogućava da opis zauzme sav dostupan prostor */
+    margin-bottom: 1rem;
+}
+
+.card-footer {
+    font-size: 0.9rem;
+    color: #6c757d;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+
+================================================
+FILE: src/components/EventCard.jsx
+================================================
+// src/components/EventCard.jsx
+
+import { Link } from 'react-router-dom';
+import './EventCard.css'; // Uvezite novi CSS
+
+function EventCard({ event }) {
+    return (
+        <div className="card">
+            <h2><Link to={`/events/${event.id}`}>{event.naslov}</Link></h2>
+            <p>{event.opis.substring(0, 150)}...</p>
+            <div className="card-footer">
+                <span>Kategorija: {event.categoryName}</span><br/>
+                <span>Datum: {new Date(event.datumOdrzavanja).toLocaleDateString()}</span>
+            </div>
+        </div>
+    );
+}
+
+export default EventCard;
+
+
+================================================
+FILE: src/components/Navbar.css
+================================================
+.navbar {
+    background-color: var(--card-background);
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px var(--shadow-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.nav-brand a {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav-actions span {
+    font-weight: 500;
+}
+
+.nav-actions a, .nav-actions button {
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.nav-actions button {
+    padding: 0.5rem 1rem;
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.nav-actions button:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+
+================================================
+FILE: src/components/Navbar.jsx
+================================================
+import { useContext } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import './Navbar.css'; // Uvezite novi CSS
+
+function Navbar() {
+    const { user, logout } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
+
+    return (
+        <nav className="navbar">
+            <div className="nav-brand">
+                <Link to="/">RAF Event Booker</Link>
+            </div>
+
+            <div className="nav-actions">
+                {user ? (
+                    <>
+                        <span>Zdravo, {user.email}</span>
+                        <Link to="/dashboard">Dashboard</Link>
+                        <button onClick={handleLogout}>Logout</button>
+                    </>
+                ) : (
+                    <Link to="/login">Login</Link>
+                )}
+            </div>
+        </nav>
+    );
+}
+
+export default Navbar;
+
+
+================================================
+FILE: src/components/ProtectedRoute.jsx
+================================================
+import { useContext } from 'react';
+import { Navigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+
+function ProtectedRoute({ children, allowedRoles }) {
+    const { user } = useContext(AuthContext);
+
+    if (!user) {
+        return <Navigate to="/login" />;
+    }
+
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
+        // Korisnik nema potrebnu ulogu, preusmeri ga na dashboard ili početnu
+        return <Navigate to="/dashboard" />;
+    }
+
+    return children;
+}
+
+export default ProtectedRoute;
+
+
+================================================
+FILE: src/context/AuthContext.jsx
+================================================
+import { createContext, useState, useEffect, useCallback } from 'react';
+import { jwtDecode } from 'jwt-decode';
+
+export const AuthContext = createContext();
+
+export function AuthProvider({ children }) {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const decodedUser = jwtDecode(token);
+                setUser(decodedUser);
+            } catch (error) {
+                localStorage.removeItem('token');
+            }
+        }
+    }, []);
+
+    const login = useCallback((token) => {
+        try {
+            localStorage.setItem('token', token);
+            const decodedUser = jwtDecode(token);
+            setUser(decodedUser);
+        } catch(error) {
+            console.error("Failed to decode token", error);
+            setUser(null);
+        }
+    }, []);
+
+    const logout = () => {
+        localStorage.removeItem('token');
+        setUser(null);
+    };
+
+    return (
+        <AuthContext.Provider value={{ user, login, logout }}>
+            {children}
+        </AuthContext.Provider>
+    );
+}
+
+
+================================================
+FILE: src/pages/AdminUsersPage.jsx
+================================================
+function AdminUsersPage() {
+    return <h1>Upravljanje Korisnicima</h1>;
+}
+export default AdminUsersPage;
+
+
+================================================
+FILE: src/pages/CategoriesPage.jsx
+================================================
+function CategoriesPage() {
+    return <h1>Upravljanje Kategorijama</h1>;
+}
+export default CategoriesPage;
+
+
+================================================
+FILE: src/pages/DashboardPage.jsx
+================================================
+function DashboardPage() {
+    return <h1>Dobrodošli na Kontrolnu Tablu</h1>;
+}
+export default DashboardPage;
+
+
+================================================
+FILE: src/pages/EventDetailsPage.jsx
+================================================
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { getEventById } from '../services/api'; // Dodaćemo i funkcije za komentare
+
+function EventDetailsPage() {
+    const { id } = useParams();
+    const [event, setEvent] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchEvent = async () => {
+            try {
+                const response = await getEventById(id);
+                setEvent(response.data);
+            } catch (error) {
+                console.error("Greška:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEvent();
+    }, [id]);
+
+    if (loading) return <p>Učitavanje detalja...</p>;
+    if (!event) return <p>Događaj nije pronađen.</p>;
+
+    return (
+        <div>
+            <h1>{event.naslov}</h1>
+            <p><strong>Lokacija:</strong> {event.lokacija}</p>
+            <p><strong>Vreme održavanja:</strong> {new Date(event.datumOdrzavanja).toLocaleString()}</p>
+            <p>{event.opis}</p>
+            <p><strong>Autor:</strong> {event.author.ime} {event.author.prezime}</p>
+            <div>
+                <strong>Tagovi:</strong> {event.tags.join(', ')}
+            </div>
+
+            {/* Sekcija za komentare će doći ovde */}
+        </div>
+    );
+}
+
+export default EventDetailsPage;
+
+
+================================================
+FILE: src/pages/EventsPage.jsx
+================================================
+function EventsPage() {
+    return <h1>Upravljanje Događajima</h1>;
+}
+export default EventsPage;
+
+
+================================================
+FILE: src/pages/Form.css
+================================================
+/* src/pages/Form.css */
+
+.form-container {
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 5px var(--shadow-color);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.form-error {
+    color: #dc3545;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+
+================================================
+FILE: src/pages/HomePage.jsx
+================================================
+import { useState, useEffect } from 'react';
+import { getAllEvents } from '../services/api';
+import EventCard from '../components/EventCard'; // Kreiraćemo ovu komponentu
+
+function HomePage() {
+    const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                const response = await getAllEvents();
+                // Backend vraća sve, sortiramo i uzimamo prvih 10
+                const sortedEvents = response.data.sort((a, b) => new Date(b.vremeKreiranja) - new Date(a.vremeKreiranja));
+                setEvents(sortedEvents.slice(0, 10));
+            } catch (error) {
+                console.error("Greška pri dohvatanju događaja:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEvents();
+    }, []);
+
+    if (loading) return <p>Učitavanje...</p>;
+
+    return (
+        <div>
+            <h1>Najnoviji Događaji</h1>
+            <div className="events-list"> {/* DODAJEMO KLASU OVDE */}
+                {events.map(event => (
+                    <EventCard key={event.id} event={event} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+export default HomePage;
+
+
+================================================
+FILE: src/pages/LoginPage.jsx
+================================================
+import { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { login as apiLogin } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
+import './Form.css';
+
+function LoginPage() {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
+    const { login } = useContext(AuthContext);
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setError('');
+        try {
+            const response = await apiLogin(email, password);
+            const token = response.data.token;
+
+            if (token) {
+                login(token);
+                navigate('/dashboard');
+            } else {
+                setError('Došlo je do greške prilikom prijave.');
+            }
+            // eslint-disable-next-line no-unused-vars
+        } catch (err) {
+            setError('Neispravan email ili lozinka.');
+        }
+    };
+
+    return (
+        <div className="form-container">
+            <h2>Prijava na EMS</h2>
+            <form onSubmit={handleLogin}>
+                <div className="form-group">
+                    <label htmlFor="email">Email:</label>
+                    <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password">Lozinka:</label>
+                    <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+                <button type="submit" style={{width: '100%'}}>Prijavi se</button>
+                {error && <p className="form-error">{error}</p>}
+            </form>
+        </div>
+    );
+}
+
+export default LoginPage;
+
+
+================================================
+FILE: src/services/api.js
+================================================
+import axios from 'axios';
+
+const apiClient = axios.create({
+    baseURL: 'http://localhost:8080/web_event_booker/api', // Proverite port vašeg servera
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Interceptor za dodavanje JWT tokena u svaki zahtev
+apiClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
+// --- Auth Service ---
+export const login = (email, password) => apiClient.post('/users/login', { email, password });
+
+// --- Event Service ---
+export const getAllEvents = () => apiClient.get('/events');
+export const getEventById = (id) => apiClient.get(`/events/${id}`);
+// ... ostale funkcije za događaje
+
+// --- Category Service ---
+export const getAllCategories = () => apiClient.get('/categories');
+// ... ostale funkcije za kategorije
+

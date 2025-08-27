@@ -1,0 +1,35 @@
+/* src/components/EventCard.css */
+
+.card {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 10px var(--shadow-color);
+}
+
+.card h2 {
+    font-size: 1.25rem;
+    margin-top: 0;
+}
+
+.card p {
+    flex-grow: 1; /* Omogućava da opis zauzme sav dostupan prostor */
+    margin-bottom: 1rem;
+}
+
+.card-footer {
+    font-size: 0.9rem;
+    color: #6c757d;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
