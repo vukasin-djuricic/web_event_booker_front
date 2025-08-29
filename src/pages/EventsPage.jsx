@@ -1,6 +1,6 @@
 // src/pages/EventsPage.jsx
 import { useState, useEffect, useContext } from 'react';
-import { getAllEvents, createEvent, updateEvent, deleteEvent, getAllCategories, getAllTags } from '../services/api';
+import { getAllEvents, createEvent, updateEvent, deleteEvent, getAllCategories, getAllTags, getEventById } from '../services/api'; // Dodat getEventById
 import { AuthContext } from '../context/AuthContext';
 import './Table.css';
 import './Form.css';
@@ -18,8 +18,8 @@ function EventsPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [currentEvent, setCurrentEvent] = useState(initialFormState);
 
+    // Učitaj sve podatke potrebne za stranicu
     useEffect(() => {
-        // Učitaj sve podatke potrebne za stranicu
         const loadInitialData = async () => {
             try {
                 setIsLoading(true);
@@ -32,7 +32,6 @@ function EventsPage() {
                 setCategories(categoriesRes.data);
                 setTags(tagsRes.data);
                 if (categoriesRes.data.length > 0) {
-                    // Postavi podrazumevanu kategoriju u formi
                     setCurrentEvent(prev => ({...prev, categoryId: categoriesRes.data[0].id}));
                 }
                 // eslint-disable-next-line no-unused-vars
@@ -57,12 +56,11 @@ function EventsPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Pripremi podatke za slanje
         const eventData = {
             ...currentEvent,
-            authorId: user.userId, // Uzmi ID ulogovanog korisnika iz tokena
+            authorId: user.userId,
             maxKapacitet: currentEvent.maxKapacitet ? parseInt(currentEvent.maxKapacitet, 10) : null,
+            // categoryId se već nalazi u state-u, kao i tagIds
         };
 
         const action = isEditing
@@ -72,7 +70,6 @@ function EventsPage() {
         try {
             await action;
             resetForm();
-            // Ponovo učitaj samo događaje
             const eventsRes = await getAllEvents();
             setEvents(eventsRes.data);
         } catch (err) {
@@ -80,22 +77,31 @@ function EventsPage() {
         }
     };
 
-    const handleEdit = (event) => {
-        setIsEditing(true);
-        setCurrentEvent({
-            id: event.id,
-            naslov: event.naslov,
-            opis: event.opis,
-            lokacija: event.lokacija,
-            // Formatiranje datuma za datetime-local input
-            datumOdrzavanja: event.datumOdrzavanja.slice(0, 16),
-            maxKapacitet: event.maxKapacitet || '',
-            categoryId: event.category.id,
-            // Backend vraća imena tagova, ali nama trebaju ID-jevi. Moramo ih naći.
-            tagIds: tags.filter(tag => event.tags.includes(tag.naziv)).map(tag => tag.id)
-        });
-        window.scrollTo(0, 0);
+    // ===== ISPRAVLJENA FUNKCIJA =====
+    const handleEdit = async (eventToEdit) => {
+        try {
+            // 1. Dohvati sveže i kompletne podatke za taj događaj
+            const { data: fullEvent } = await getEventById(eventToEdit.id);
+
+            setIsEditing(true);
+            setCurrentEvent({
+                id: fullEvent.id,
+                naslov: fullEvent.naslov,
+                opis: fullEvent.opis,
+                lokacija: fullEvent.lokacija,
+                datumOdrzavanja: fullEvent.datumOdrzavanja.slice(0, 16),
+                maxKapacitet: fullEvent.maxKapacitet || '',
+                //categoryId: fullEvent.category.id, // Sad imamo ID kategorije
+                categoryId: 2, // Privremeno hardkodirano dok nema kategorija
+                tagIds: fullEvent.tags.map(tag => tag.id) // Sad imamo ID-jeve tagova
+            });
+            window.scrollTo(0, 0);
+            // eslint-disable-next-line no-unused-vars
+        } catch (e) {
+            setError("Nije moguće učitati podatke za izmenu.");
+        }
     };
+    // ===================================
 
     const handleDelete = async (id) => {
         if (window.confirm('Da li ste sigurni da želite da obrišete ovaj događaj?')) {
@@ -119,6 +125,7 @@ function EventsPage() {
         setError('');
     };
 
+    // ... JSX deo (return) ostaje potpuno isti kao u prethodnom odgovoru
     return (
         <div>
             {/* Forma */}

@@ -28,7 +28,18 @@ function Navbar() {
                 <Link to="/">RAF Event Booker</Link>
             </div>
 
-            {/* Ovde može doći forma za pretragu */}
+            {/* ======== OVA FORMA JE NEDOSTAJALA ======== */}
+            <form onSubmit={handleSearchSubmit} style={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+                <input
+                    type="text"
+                    placeholder="Pretraži događaje po naslovu ili opisu..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ padding: '0.5rem', marginRight: '0.5rem', minWidth: '300px', fontSize: '1rem' }}
+                />
+                <button type="submit" style={{ padding: '0.5rem 1rem' }}>Traži</button>
+            </form>
+            {/* ======================================== */}
 
             <div className="nav-actions">
                 {user ? (

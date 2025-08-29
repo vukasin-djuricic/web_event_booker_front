@@ -66,7 +66,7 @@ function EventDetailsPage() {
             <p style={{whiteSpace: 'pre-wrap'}}>{event.opis}</p>
             <p><strong>Autor:</strong> {event.author.ime} {event.author.prezime}</p>
             <div>
-                <strong>Tagovi:</strong> {event.tags.join(', ')}
+                <strong>Tagovi:</strong> {event.tags.map(tag => tag.naziv).join(', ')}
             </div>
 
             <hr style={{margin: '3rem 0'}} />
