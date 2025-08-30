@@ -1,6 +1,6 @@
 // src/pages/EventsPage.jsx
 import { useState, useEffect, useContext } from 'react';
-import { getAllEvents, createEvent, updateEvent, deleteEvent, getAllCategories, getAllTags, getEventById } from '../services/api'; // Dodat getEventById
+import { getAllEvents, createEvent, updateEvent, deleteEvent, getAllCategories, getAllTags, getEventById } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import './Table.css';
 import './Form.css';
@@ -18,7 +18,6 @@ function EventsPage() {
     const [isEditing, setIsEditing] = useState(false);
     const [currentEvent, setCurrentEvent] = useState(initialFormState);
 
-    // Učitaj sve podatke potrebne za stranicu
     useEffect(() => {
         const loadInitialData = async () => {
             try {
@@ -32,9 +31,8 @@ function EventsPage() {
                 setCategories(categoriesRes.data);
                 setTags(tagsRes.data);
                 if (categoriesRes.data.length > 0) {
-                    setCurrentEvent(prev => ({...prev, categoryId: categoriesRes.data[0].id}));
+                    setCurrentEvent(prev => ({ ...prev, categoryId: categoriesRes.data[0].id }));
                 }
-                // eslint-disable-next-line no-unused-vars
             } catch (err) {
                 setError('Greška pri učitavanju podataka.');
             } finally {
@@ -54,18 +52,30 @@ function EventsPage() {
         setCurrentEvent({ ...currentEvent, tagIds: selectedIds });
     };
 
+    // ===== POTPUNO ISPRAVLJENA handleSubmit FUNKCIJA =====
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const eventData = {
-            ...currentEvent,
-            authorId: user.userId,
+
+        // Eksplicitno kreiramo čist objekat sa ispravnim tipovima podataka za slanje
+        const eventDataToSend = {
+            naslov: currentEvent.naslov,
+            opis: currentEvent.opis,
+            lokacija: currentEvent.lokacija,
+            datumOdrzavanja: currentEvent.datumOdrzavanja,
             maxKapacitet: currentEvent.maxKapacitet ? parseInt(currentEvent.maxKapacitet, 10) : null,
-            // categoryId se već nalazi u state-u, kao i tagIds
+            categoryId: parseInt(currentEvent.categoryId, 10),
+            tagIds: currentEvent.tagIds.map(id => parseInt(id, 10)),
+            authorId: user.userId
         };
 
+        if (!eventDataToSend.categoryId) {
+            setError("Molimo izaberite kategoriju.");
+            return;
+        }
+
         const action = isEditing
-            ? updateEvent(currentEvent.id, eventData)
-            : createEvent(eventData);
+            ? updateEvent(currentEvent.id, eventDataToSend)
+            : createEvent(eventDataToSend);
 
         try {
             await action;
@@ -73,14 +83,15 @@ function EventsPage() {
             const eventsRes = await getAllEvents();
             setEvents(eventsRes.data);
         } catch (err) {
-            setError(err.response?.data?.message || 'Došlo je do greške pri čuvanju događaja.');
+            const serverError = err.response?.data?.message || err.response?.data || 'Došlo je do greške pri čuvanju događaja.';
+            setError(typeof serverError === 'object' ? JSON.stringify(serverError) : serverError);
         }
     };
 
-    // ===== ISPRAVLJENA FUNKCIJA =====
+    // ===== POTPUNO ISPRAVLJENA handleEdit FUNKCIJA =====
     const handleEdit = async (eventToEdit) => {
         try {
-            // 1. Dohvati sveže i kompletne podatke za taj događaj
+            // 1. Dohvati sveže i kompletne podatke za taj događaj sa servera
             const { data: fullEvent } = await getEventById(eventToEdit.id);
 
             setIsEditing(true);
@@ -91,17 +102,14 @@ function EventsPage() {
                 lokacija: fullEvent.lokacija,
                 datumOdrzavanja: fullEvent.datumOdrzavanja.slice(0, 16),
                 maxKapacitet: fullEvent.maxKapacitet || '',
-                //categoryId: fullEvent.category.id, // Sad imamo ID kategorije
-                categoryId: 2, // Privremeno hardkodirano dok nema kategorija
-                tagIds: fullEvent.tags.map(tag => tag.id) // Sad imamo ID-jeve tagova
+                categoryId: fullEvent.categoryId, // Koristimo ispravan ID kategorije
+                tagIds: fullEvent.tags.map(tag => tag.id) // Mapiramo TagDTO objekte u niz ID-jeva
             });
             window.scrollTo(0, 0);
-            // eslint-disable-next-line no-unused-vars
         } catch (e) {
             setError("Nije moguće učitati podatke za izmenu.");
         }
     };
-    // ===================================
 
     const handleDelete = async (id) => {
         if (window.confirm('Da li ste sigurni da želite da obrišete ovaj događaj?')) {
@@ -109,7 +117,6 @@ function EventsPage() {
                 await deleteEvent(id);
                 const eventsRes = await getAllEvents();
                 setEvents(eventsRes.data);
-                // eslint-disable-next-line no-unused-vars
             } catch (err) {
                 setError('Greška pri brisanju događaja.');
             }
@@ -125,7 +132,7 @@ function EventsPage() {
         setError('');
     };
 
-    // ... JSX deo (return) ostaje potpuno isti kao u prethodnom odgovoru
+    // JSX (return ...) ostaje isti kao u prethodnom odgovoru
     return (
         <div>
             {/* Forma */}

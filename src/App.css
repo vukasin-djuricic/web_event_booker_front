@@ -12,3 +12,16 @@
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
 }
+
+.tag-link {
+    background-color: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    text-decoration: none;
+    color: #495057;
+}
+.tag-link:hover {
+    background-color: #ced4da;
+    text-decoration: none;
+}

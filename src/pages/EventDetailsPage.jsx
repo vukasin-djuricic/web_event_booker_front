@@ -68,10 +68,10 @@ function EventDetailsPage() {
             <div>
                 <strong>Tagovi:</strong>
                 {event.tags.map((tag, index) => (
-                    <span key={tag.id}>
-                    <Link to={`/tag/${tag.id}`}>{tag.naziv}</Link>
-                        {index < event.tags.length - 1 ? ', ' : ''}
-                </span>
+                    <span key={tag.id} style={{ marginLeft: '5px' }}>
+                        <Link to={`/tag/${tag.id}`} className="tag-link">{tag.naziv}</Link>
+                        {index < event.tags.length - 1 ? ',' : ''}
+                    </span>
                 ))}
             </div>
 

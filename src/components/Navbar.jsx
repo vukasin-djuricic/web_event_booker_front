@@ -1,30 +1,31 @@
 // src/components/Navbar.jsx
-import {useState, useContext, useEffect} from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { getAllCategories, getAllTags } from '../services/api';
+import Modal from './Modal'; // <<===== KLJUČNA ISPRAVKA: Importovanje Modal komponente
 import './Navbar.css';
-import {getAllCategories} from "../services/api.js";
 
 function Navbar() {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
-    const [categories, setCategories] = useState([]); // State za kategorije
+    const [isFilterModalOpen, setFilterModalOpen] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [tags, setTags] = useState([]);
 
-    // Dohvati sve kategorije kada se komponenta učita
     useEffect(() => {
-        const fetchCategories = async () => {
+        const fetchFilters = async () => {
             try {
-                const res = await getAllCategories();
-                setCategories(res.data);
-                // eslint-disable-next-line no-unused-vars
+                const [catRes, tagRes] = await Promise.all([getAllCategories(), getAllTags()]);
+                setCategories(catRes.data);
+                setTags(tagRes.data);
             } catch (error) {
-                console.error("Ne mogu da učitam kategorije za meni.");
+                console.error("Greška pri učitavanju filtera:", error);
             }
         };
-        fetchCategories();
+        fetchFilters();
     }, []);
-
 
     const handleLogout = () => {
         logout();
@@ -40,50 +41,68 @@ function Navbar() {
     };
 
     return (
-        <nav className="navbar">
-            <div className="nav-brand">
-                <Link to="/">RAF Event Booker</Link>
-            </div>
-
-            {/* Padajući meni za kategorije */}
-            <div className="nav-item dropdown">
-                <span className="nav-link">Kategorije</span>
-                <div className="dropdown-menu">
-                    {categories.map(cat => (
-                        <Link key={cat.id} to={`/category/${cat.id}`} className="dropdown-item">
-                            {cat.name}
-                        </Link>
-                    ))}
+        <>
+            <nav className="navbar">
+                <div className="nav-brand">
+                    <Link to="/">RAF Event Booker</Link>
                 </div>
-            </div>
 
-            {/* ======== OVA FORMA JE NEDOSTAJALA ======== */}
-            <form onSubmit={handleSearchSubmit} style={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
-                <input
-                    type="text"
-                    placeholder="Pretraži događaje po naslovu ili opisu..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ padding: '0.5rem', marginRight: '0.5rem', minWidth: '300px', fontSize: '1rem' }}
-                />
-                <button type="submit" style={{ padding: '0.5rem 1rem' }}>Traži</button>
-            </form>
-            {/* ======================================== */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'center' }}>
+                    {/* VRAĆENA FORMA ZA PRETRAGU */}
+                    <form onSubmit={handleSearchSubmit}>
+                        <input
+                            type="text"
+                            placeholder="Pretraži po naslovu/opisu..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{ padding: '0.5rem', minWidth: '300px' }}
+                        />
+                        <button type="submit" style={{ padding: '0.5rem 1rem' }}>Traži</button>
+                    </form>
+                    <button onClick={() => setFilterModalOpen(true)} style={{ padding: '0.5rem 1rem' }}>
+                        Filteri
+                    </button>
+                </div>
 
-            <div className="nav-actions">
-                {user ? (
-                    <>
-                        <span>Zdravo, {user.email} ({user.role})</span>
-                        <Link to="/categories">Kategorije</Link>
-                        <Link to="/events-management">Događaji</Link>
-                        {user.role === 'ADMIN' && <Link to="/users">Korisnici</Link>}
-                        <button onClick={handleLogout}>Logout</button>
-                    </>
-                ) : (
-                    <Link to="/login">Login</Link>
-                )}
-            </div>
-        </nav>
+                <div className="nav-actions">
+                    {user ? (
+                        <>
+                            <span>Zdravo, {user.email} ({user.role})</span>
+                            <Link to="/categories">Kategorije</Link>
+                            <Link to="/events-management">Događaji</Link>
+                            {user.role === 'ADMIN' && <Link to="/users">Korisnici</Link>}
+                            <button onClick={handleLogout}>Logout</button>
+                        </>
+                    ) : (
+                        <Link to="/login">Login</Link>
+                    )}
+                </div>
+            </nav>
+
+            <Modal isOpen={isFilterModalOpen} onClose={() => setFilterModalOpen(false)} title="Filteri">
+                <h4>Kategorije</h4>
+                <ul className="filter-list">
+                    {categories.map(cat => (
+                        <li key={`cat-${cat.id}`}>
+                            <Link to={`/category/${cat.id}`} onClick={() => setFilterModalOpen(false)}>
+                                {cat.name}
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+                <hr style={{margin: '1.5rem 0'}} />
+                <h4>Tagovi</h4>
+                <ul className="filter-list">
+                    {tags.map(tag => (
+                        <li key={`tag-${tag.id}`}>
+                            <Link to={`/tag/${tag.id}`} onClick={() => setFilterModalOpen(false)}>
+                                {tag.naziv}
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            </Modal>
+        </>
     );
 }
 
