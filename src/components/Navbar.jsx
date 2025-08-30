@@ -1,13 +1,30 @@
 // src/components/Navbar.jsx
-import { useState, useContext } from 'react';
+import {useState, useContext, useEffect} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import './Navbar.css';
+import {getAllCategories} from "../services/api.js";
 
 function Navbar() {
     const { user, logout } = useContext(AuthContext);
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
+    const [categories, setCategories] = useState([]); // State za kategorije
+
+    // Dohvati sve kategorije kada se komponenta učita
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await getAllCategories();
+                setCategories(res.data);
+                // eslint-disable-next-line no-unused-vars
+            } catch (error) {
+                console.error("Ne mogu da učitam kategorije za meni.");
+            }
+        };
+        fetchCategories();
+    }, []);
+
 
     const handleLogout = () => {
         logout();
@@ -26,6 +43,18 @@ function Navbar() {
         <nav className="navbar">
             <div className="nav-brand">
                 <Link to="/">RAF Event Booker</Link>
+            </div>
+
+            {/* Padajući meni za kategorije */}
+            <div className="nav-item dropdown">
+                <span className="nav-link">Kategorije</span>
+                <div className="dropdown-menu">
+                    {categories.map(cat => (
+                        <Link key={cat.id} to={`/category/${cat.id}`} className="dropdown-item">
+                            {cat.name}
+                        </Link>
+                    ))}
+                </div>
             </div>
 
             {/* ======== OVA FORMA JE NEDOSTAJALA ======== */}

@@ -27,6 +27,8 @@ export const searchEvents = (query) => apiClient.get(`/events/search?query=${que
 export const createEvent = (eventData) => apiClient.post('/events', eventData);
 export const updateEvent = (id, eventData) => apiClient.put(`/events/${id}`, eventData);
 export const deleteEvent = (id) => apiClient.delete(`/events/${id}`);
+export const getEventsByCategory = (categoryId) => apiClient.get(`/events/category/${categoryId}`);
+export const getEventsByTag = (tagId) => apiClient.get(`/tags/${tagId}/events`);
 
 // --- Category Service ---
 export const getAllCategories = () => apiClient.get('/categories');

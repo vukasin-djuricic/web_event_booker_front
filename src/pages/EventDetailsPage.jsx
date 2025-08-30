@@ -1,6 +1,6 @@
 // src/pages/EventDetailsPage.jsx
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 import { getEventById, getCommentsForEvent, addComment } from '../services/api';
 import './Form.css';
 import '../components/EventCard.css'; // Za stil .card
@@ -66,7 +66,13 @@ function EventDetailsPage() {
             <p style={{whiteSpace: 'pre-wrap'}}>{event.opis}</p>
             <p><strong>Autor:</strong> {event.author.ime} {event.author.prezime}</p>
             <div>
-                <strong>Tagovi:</strong> {event.tags.map(tag => tag.naziv).join(', ')}
+                <strong>Tagovi:</strong>
+                {event.tags.map((tag, index) => (
+                    <span key={tag.id}>
+                    <Link to={`/tag/${tag.id}`}>{tag.naziv}</Link>
+                        {index < event.tags.length - 1 ? ', ' : ''}
+                </span>
+                ))}
             </div>
 
             <hr style={{margin: '3rem 0'}} />
