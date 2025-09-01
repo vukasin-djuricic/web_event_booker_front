@@ -1,37 +1,51 @@
+// src/pages/HomePage.jsx
 import { useState, useEffect } from 'react';
 import { getAllEvents } from '../services/api';
-import EventCard from '../components/EventCard'; // Kreiraćemo ovu komponentu
+import EventCard from '../components/EventCard';
 
 function HomePage() {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchEvents = async () => {
+        const fetchLatestEvents = async () => {
             try {
-                const response = await getAllEvents();
-                // Backend vraća sve, sortiramo i uzimamo prvih 10
-                const sortedEvents = response.data.sort((a, b) => new Date(b.vremeKreiranja) - new Date(a.vremeKreiranja));
-                setEvents(sortedEvents.slice(0, 10));
+                setLoading(true);
+                // Tražimo prvu stranicu sa 10 najnovijih događaja
+                const response = await getAllEvents(1, 10);
+
+                // Proveravamo da li podaci postoje u očekivanom formatu
+                if (response.data && response.data.data) {
+                    setEvents(response.data.data);
+                } else {
+                    setEvents([]);
+                }
             } catch (error) {
                 console.error("Greška pri dohvatanju događaja:", error);
+                setError('Nije moguće učitati najnovije događaje.');
             } finally {
                 setLoading(false);
             }
         };
-        fetchEvents();
+        fetchLatestEvents();
     }, []);
 
     if (loading) return <p>Učitavanje...</p>;
+    if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
     return (
         <div>
             <h1>Najnoviji Događaji</h1>
-            <div className="events-list"> {/* DODAJEMO KLASU OVDE */}
-                {events.map(event => (
-                    <EventCard key={event.id} event={event} />
-                ))}
-            </div>
+            {events.length > 0 ? (
+                <div className="events-list">
+                    {events.map(event => (
+                        <EventCard key={event.id} event={event} />
+                    ))}
+                </div>
+            ) : (
+                <p>Trenutno nema dostupnih događaja.</p>
+            )}
         </div>
     );
 }

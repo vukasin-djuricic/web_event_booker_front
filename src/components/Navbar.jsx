@@ -3,7 +3,7 @@ import { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { getAllCategories, getAllTags } from '../services/api';
-import Modal from './Modal'; // <<===== KLJUČNA ISPRAVKA: Importovanje Modal komponente
+import Modal from './Modal'; // <<===== OVDE JE KLJUČNA ISPRAVKA
 import './Navbar.css';
 
 function Navbar() {
@@ -48,7 +48,6 @@ function Navbar() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'center' }}>
-                    {/* VRAĆENA FORMA ZA PRETRAGU */}
                     <form onSubmit={handleSearchSubmit}>
                         <input
                             type="text"
@@ -82,13 +81,13 @@ function Navbar() {
             <Modal isOpen={isFilterModalOpen} onClose={() => setFilterModalOpen(false)} title="Filteri">
                 <h4>Kategorije</h4>
                 <ul className="filter-list">
-                    {categories.map(cat => (
-                        <li key={`cat-${cat.id}`}>
-                            <Link to={`/category/${cat.id}`} onClick={() => setFilterModalOpen(false)}>
-                                {cat.name}
-                            </Link>
-                        </li>
-                    ))}
+                    {categories?.data?.map(cat => (
+                                <li key={`cat-${cat.id}`}>
+                                    <Link to={`/category/${cat.id}`} onClick={() => setFilterModalOpen(false)}>
+                                        {cat.name}
+                                    </Link>
+                                </li>
+                            ))}
                 </ul>
                 <hr style={{margin: '1.5rem 0'}} />
                 <h4>Tagovi</h4>

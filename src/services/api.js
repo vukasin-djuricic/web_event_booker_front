@@ -21,7 +21,7 @@ apiClient.interceptors.request.use((config) => {
 export const login = (email, password) => apiClient.post('/users/login', { email, password });
 
 // --- Event Service ---
-export const getAllEvents = () => apiClient.get('/events');
+export const getAllEvents = (page = 1, limit = 10) => apiClient.get(`/events?page=${page}&limit=${limit}`);
 export const getEventById = (id) => apiClient.get(`/events/${id}`);
 export const searchEvents = (query) => apiClient.get(`/events/search?query=${query}`);
 export const createEvent = (eventData) => apiClient.post('/events', eventData);
@@ -29,9 +29,12 @@ export const updateEvent = (id, eventData) => apiClient.put(`/events/${id}`, eve
 export const deleteEvent = (id) => apiClient.delete(`/events/${id}`);
 export const getEventsByCategory = (categoryId) => apiClient.get(`/events/category/${categoryId}`);
 export const getEventsByTag = (tagId) => apiClient.get(`/tags/${tagId}/events`);
+export const incrementView = (id) => apiClient.post(`/events/${id}/view`);
+export const likeEvent = (id) => apiClient.post(`/events/${id}/like`);
+export const dislikeEvent = (id) => apiClient.post(`/events/${id}/dislike`);
 
 // --- Category Service ---
-export const getAllCategories = () => apiClient.get('/categories');
+export const getAllCategories = (page = 1, limit = 100) => apiClient.get(`/categories?page=${page}&limit=${limit}`);
 export const createCategory = (categoryData) => apiClient.post('/categories', categoryData);
 export const updateCategory = (id, categoryData) => apiClient.put(`/categories/${id}`, categoryData);
 export const deleteCategory = (id) => apiClient.delete(`/categories/${id}`);
