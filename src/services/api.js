@@ -21,6 +21,9 @@ apiClient.interceptors.request.use((config) => {
 export const login = (email, password) => apiClient.post('/users/login', { email, password });
 
 // --- Event Service ---
+export const getRelatedEvents = (eventId) => apiClient.get(`/events/${eventId}/related`);
+export const getTopReactedEvents = () => apiClient.get('/events/top-reacted');
+export const getMostVisitedEvents = () => apiClient.get('/events/most-visited');
 export const getAllEvents = (page = 1, limit = 10) => apiClient.get(`/events?page=${page}&limit=${limit}`);
 export const getEventById = (id) => apiClient.get(`/events/${id}`);
 export const searchEvents = (query) => apiClient.get(`/events/search?query=${query}`);
@@ -42,6 +45,8 @@ export const deleteCategory = (id) => apiClient.delete(`/categories/${id}`);
 // --- Comment Service ---
 export const getCommentsForEvent = (eventId) => apiClient.get(`/events/${eventId}/comments`);
 export const addComment = (eventId, commentData) => apiClient.post(`/events/${eventId}/comments`, commentData);
+export const likeComment = (commentId) => apiClient.post(`/comments/${commentId}/like`);
+export const dislikeComment = (commentId) => apiClient.post(`/comments/${commentId}/dislike`);
 
 // --- User Service (Admin) ---
 export const getAllUsers = () => apiClient.get('/users');

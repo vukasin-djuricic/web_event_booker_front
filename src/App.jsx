@@ -16,6 +16,8 @@ import Navbar from "./components/Navbar.jsx"; // Dodajemo i Navbar
 import './App.css';
 import TagEventsPage from "./pages/TagEventsPage.jsx";
 import CategoryEventsPage from "./pages/CategoryEventsPage.jsx";
+import MostVisitedPage from "./pages/MostVisitedPage.jsx";
+import TopReactionsBlock from "./components/TopReactionsBlock.jsx";
 
 function App() {
     return (
@@ -28,8 +30,10 @@ function App() {
                     <Route path="/events/:id" element={<EventDetailsPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/search" element={<SearchPage />} />
-                    <Route path="/category/:id" element={<CategoryEventsPage />} /> {/* NOVA RUTA */}
-                    <Route path="/tag/:id" element={<TagEventsPage />} />       {/* NOVA RUTA */}
+                    <Route path="/category/:id" element={<CategoryEventsPage />} />
+                    <Route path="/tag/:id" element={<TagEventsPage />} />
+                    <Route path="/most-visited" element={<MostVisitedPage />} />
+
 
                     {/* EMS Rute (zaštićene) */}
                     <Route path="/dashboard" element={
@@ -54,6 +58,8 @@ function App() {
                     } />
                 </Routes>
             </main>
+            <TopReactionsBlock /> {/* Dodajemo blok sa najviše reakcija */}
+
         </>
     );
 }

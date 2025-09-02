@@ -45,6 +45,7 @@ function Navbar() {
             <nav className="navbar">
                 <div className="nav-brand">
                     <Link to="/">RAF Event Booker</Link>
+                    <Link to="/most-visited" style={{ marginLeft: '2rem', fontSize: '1rem' }}>Najposećeniji</Link>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'center' }}>
