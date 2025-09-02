@@ -1,10 +1,14 @@
 // src/pages/EventsPage.jsx
 
 import { useState, useEffect, useContext } from 'react';
-import { getAllEvents, createEvent, updateEvent, deleteEvent, getAllCategories, getAllTags, getEventById } from '../services/api';
+import {
+    getAllEvents, createEvent, updateEvent, deleteEvent, getAllCategories, getAllTags, getEventById,
+    getRsvpsForEvent
+} from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import './Table.css';
 import './Form.css';
+import Modal from "../components/Modal.jsx";
 
 // Inicijalno stanje forme
 const initialFormState = {
@@ -36,6 +40,11 @@ function EventsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const ITEMS_PER_PAGE = 5; // Definišemo koliko stavki želimo po stranici
+
+    //RSVP STATES
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [rsvps, setRsvps] = useState([]);
+    const [selectedEventTitle, setSelectedEventTitle] = useState('');
 
     // Učitavamo podatke svaki put kada se promeni `currentPage`
     useEffect(() => {
@@ -164,6 +173,19 @@ function EventsPage() {
         }
     };
 
+    const handleShowRsvps = async (eventId) => {
+        try {
+            const event = events.find(e => e.id === eventId);
+            setSelectedEventTitle(event.naslov);
+            const response = await getRsvpsForEvent(eventId);
+            setRsvps(response.data);
+            setIsModalOpen(true);
+            // eslint-disable-next-line no-unused-vars
+        } catch (error) {
+            setError("Greška pri dohvatanju prijava.");
+        }
+    };
+
     // Resetovanje forme na početne vrednosti
     const resetForm = () => {
         setIsEditing(false);
@@ -243,6 +265,12 @@ function EventsPage() {
                                     <td>{event.naslov}</td>
                                     <td>{event.categoryName}</td>
                                     <td>{new Date(event.datumOdrzavanja).toLocaleString()}</td>
+                                    <td>
+                                        {event.maxKapacitet != null ?
+                                            <button onClick={() => handleShowRsvps(event.id)}>Pregled Prijava</button> :
+                                            'N/A'
+                                        }
+                                    </td>
                                     <td className="actions">
                                         <button className="btn-edit" onClick={() => handleEdit(event)}>Izmeni</button>
                                         <button className="btn-delete" onClick={() => handleDelete(event.id)}>Obriši</button>
@@ -262,8 +290,22 @@ function EventsPage() {
                     </>
                 )}
             </div>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={`Prijave za: ${selectedEventTitle}`}>
+                {rsvps.length > 0 ? (
+                    <ul style={{ listStyle: 'none', padding: 0 }}>
+                        {rsvps.map(rsvp => (
+                            <li key={rsvp.id} style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
+                                <strong>{rsvp.userIdentifier}</strong> - Prijavljen: {new Date(rsvp.rsvpDate).toLocaleString()}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>Nema prijavljenih za ovaj događaj.</p>
+                )}
+            </Modal>
         </div>
     );
-}
 
+
+}
 export default EventsPage;
