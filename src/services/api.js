@@ -52,3 +52,7 @@ export const toggleUserStatus = (id, status) => apiClient.put(`/users/${id}/stat
 
 // --- Tag Service ---
 export const getAllTags = () => apiClient.get('/tags');
+
+// --- RSVP Service ---
+export const getRsvpCount = (eventId) => apiClient.get(`/events/${eventId}/rsvps/count`);
+export const createRsvp = (eventId, rsvpData) => apiClient.post(`/events/${eventId}/rsvps`, rsvpData);

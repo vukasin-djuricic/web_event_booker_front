@@ -1,19 +1,18 @@
 // src/pages/EventDetailsPage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext'; // Importujemo AuthContext
 import {
-    getEventById,
-    getCommentsForEvent,
-    addComment,
-    incrementView,
-    likeEvent,
-    dislikeEvent
-} from '../services/api'; // Uklonjeni importi za like/dislike komentara
+    getEventById, getCommentsForEvent, addComment, incrementView, likeEvent, dislikeEvent,
+    getRsvpCount, createRsvp // Dodajemo nove API funkcije
+} from '../services/api';
 import './Form.css';
 import '../components/EventCard.css';
 import '../App.css';
 
 function EventDetailsPage() {
+    const { user } = useContext(AuthContext); // Dohvatamo ulogovanog korisnika
+
     const { id } = useParams();
     const [event, setEvent] = useState(null);
     const [comments, setComments] = useState([]);
@@ -22,27 +21,46 @@ function EventDetailsPage() {
     const [commentError, setCommentError] = useState('');
     const [hasVotedOnEvent, setHasVotedOnEvent] = useState(false);
 
+    // RSVP state-ovi
+    const [rsvpCount, setRsvpCount] = useState(0);
+    const [hasRsvpd, setHasRsvpd] = useState(false);
+    const [rsvpIdentifier, setRsvpIdentifier] = useState('');
+    const [rsvpError, setRsvpError] = useState('');
+
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
+                // Provera za view count
                 const viewedKey = `viewed_event_${id}`;
                 if (!sessionStorage.getItem(viewedKey)) {
                     await incrementView(id);
                     sessionStorage.setItem(viewedKey, 'true');
                 }
 
+                // Provera za glasanje
                 const votedKey = `voted_event_${id}`;
-                if (localStorage.getItem(votedKey)) {
-                    setHasVotedOnEvent(true);
-                }
+                setHasVotedOnEvent(!!localStorage.getItem(votedKey));
 
-                const [eventResponse, commentsResponse] = await Promise.all([
+                // Provera da li je korisnik već RSVP-ovao
+                const rsvpKey = `rsvpd_event_${id}`;
+                setHasRsvpd(!!localStorage.getItem(rsvpKey));
+
+                // Dohvatanje svih podataka istovremeno
+                const [eventResponse, commentsResponse, rsvpResponse] = await Promise.all([
                     getEventById(id),
-                    getCommentsForEvent(id)
+                    getCommentsForEvent(id),
+                    getRsvpCount(id).catch(() => ({ data: { count: 0 } })) // Uhvati grešku ako RSVP nije omogućen
                 ]);
+
                 setEvent(eventResponse.data);
                 setComments(commentsResponse.data);
+                setRsvpCount(rsvpResponse.data.count);
+
+                // Ako je korisnik ulogovan, automatski popuni polje za prijavu
+                if (user) {
+                    setRsvpIdentifier(user.email);
+                }
 
             } catch (error) {
                 console.error("Greška pri dohvatanju podataka:", error);
@@ -52,7 +70,26 @@ function EventDetailsPage() {
         };
 
         fetchData();
-    }, [id]);
+    }, [id, user]);
+
+    const handleRsvpSubmit = async (e) => {
+        e.preventDefault();
+        setRsvpError('');
+
+        if (!rsvpIdentifier.trim()) {
+            setRsvpError('Molimo unesite vaše ime ili email.');
+            return;
+        }
+
+        try {
+            await createRsvp(id, { userIdentifier: rsvpIdentifier });
+            setHasRsvpd(true);
+            setRsvpCount(prev => prev + 1);
+            localStorage.setItem(`rsvpd_event_${id}`, 'true');
+        } catch (err) {
+            setRsvpError(err.response?.data || 'Došlo je do greške prilikom prijave.');
+        }
+    };
 
     const handleCommentChange = (e) => {
         setNewComment({ ...newComment, [e.target.name]: e.target.value });
@@ -92,6 +129,8 @@ function EventDetailsPage() {
 
     if (loading) return <p>Učitavanje detalja događaja...</p>;
     if (!event) return <p>Događaj nije pronađen.</p>;
+    const isCapacityFull = event.maxKapacitet && rsvpCount >= event.maxKapacitet;
+
 
     return (
         <div style={{ paddingBottom: '2rem' }}>
@@ -121,6 +160,40 @@ function EventDetailsPage() {
                     👎 Dislike ({event.dislikeCount})
                 </button>
             </div>
+
+            {/* RSVP SEKCIJA */}
+            {event.maxKapacitet != null && (
+                <div className="rsvp-section" style={{marginBottom: '2rem'}}>
+                    <h2>Prijave (RSVP)</h2>
+                    <div className="card" style={{padding: '1.5rem'}}>
+                        <p><strong>Broj prijavljenih:</strong> {rsvpCount} / {event.maxKapacitet}</p>
+
+                        {hasRsvpd ? (
+                            <p style={{color: 'green', fontWeight: 'bold'}}>Uspešno ste prijavljeni!</p>
+                        ) : isCapacityFull ? (
+                            <p style={{color: 'red', fontWeight: 'bold'}}>Kapacitet je popunjen.</p>
+                        ) : (
+                            <div className="form-container" style={{margin: '0', padding: '0'}}>
+                                <form onSubmit={handleRsvpSubmit}>
+                                    <div className="form-group">
+                                        <label htmlFor="rsvpIdentifier">Vaše ime ili email</label>
+                                        <input
+                                            type="text"
+                                            id="rsvpIdentifier"
+                                            value={rsvpIdentifier}
+                                            onChange={(e) => setRsvpIdentifier(e.target.value)}
+                                            disabled={!!user} // Onemogući promenu ako je korisnik ulogovan
+                                            required
+                                        />
+                                    </div>
+                                    {rsvpError && <p className="form-error">{rsvpError}</p>}
+                                    <button type="submit">Prijavi se (RSVP)</button>
+                                </form>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <hr style={{margin: '3rem 0'}} />
 
