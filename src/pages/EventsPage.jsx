@@ -1,36 +1,26 @@
-// src/pages/EventsPage.jsx
-
 import { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom'; // Dodajemo Link
 import {
-    getAllEvents, createEvent, updateEvent, deleteEvent, getAllCategories, getAllTags, getEventById,
-    getRsvpsForEvent
+    getAllEvents, createEvent, updateEvent, deleteEvent,
+    getAllCategories, getAllTags, getEventById, getRsvpsForEvent
 } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import Modal from "../components/Modal.jsx";
 import './Table.css';
 import './Form.css';
-import Modal from "../components/Modal.jsx";
 
-// Inicijalno stanje forme
 const initialFormState = {
-    id: null,
-    naslov: '',
-    opis: '',
-    lokacija: '',
-    datumOdrzavanja: '',
-    maxKapacitet: '',
-    categoryId: '',
-    tagIds: []
+    id: null, naslov: '', opis: '', lokacija: '', datumOdrzavanja: '',
+    maxKapacitet: '', categoryId: '', tagIds: []
 };
 
 function EventsPage() {
     const { user } = useContext(AuthContext);
 
-    // State za podatke
+    // State
     const [events, setEvents] = useState([]);
     const [categories, setCategories] = useState([]);
     const [tags, setTags] = useState([]);
-
-    // State za UI
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [isEditing, setIsEditing] = useState(false);
@@ -39,49 +29,62 @@ function EventsPage() {
     // State za paginaciju
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
-    const ITEMS_PER_PAGE = 5; // Definišemo koliko stavki želimo po stranici
+    const ITEMS_PER_PAGE = 5; // Možete podesiti broj stavki po stranici
 
-    //RSVP STATES
+    // State za RSVP modal
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [rsvps, setRsvps] = useState([]);
     const [selectedEventTitle, setSelectedEventTitle] = useState('');
 
-    // Učitavamo podatke svaki put kada se promeni `currentPage`
+    // Učitavanje podataka pri promeni stranice
     useEffect(() => {
         loadInitialData(currentPage);
     }, [currentPage]);
 
-    // Funkcija za učitavanje svih potrebnih podataka
     const loadInitialData = async (page) => {
         try {
             setIsLoading(true);
-            setError(''); // Resetuj grešku
+            setError('');
 
             const [eventsRes, categoriesRes, tagsRes] = await Promise.all([
                 getAllEvents(page, ITEMS_PER_PAGE),
-                getAllCategories(1, 100), // Dohvati sve kategorije za dropdown
-                getAllTags()              // Dohvati sve tagove za dropdown
+                getAllCategories(1, 100),
+                getAllTags()
             ]);
 
-            // Postavljanje podataka iz API odgovora
             setEvents(eventsRes.data.data);
             setTotalPages(Math.ceil(eventsRes.data.totalCount / ITEMS_PER_PAGE));
-            setCategories(categoriesRes.data.data); // Kategorije su takođe paginirane
+            setCategories(categoriesRes.data.data);
             setTags(tagsRes.data);
 
-            // Postavi podrazumevanu kategoriju u formi ako već nije postavljena
-            if (categoriesRes.data.data.length > 0 && !currentEvent.categoryId) {
+            if (categoriesRes.data.data.length > 0 && !isEditing) {
                 setCurrentEvent(prev => ({ ...prev, categoryId: categoriesRes.data.data[0].id }));
             }
+            // eslint-disable-next-line no-unused-vars
         } catch (err) {
-            setError('Greška pri učitavanju podataka. Proverite da li je backend pokrenut.');
-            console.error(err);
+            setError('Greška pri učitavanju podataka.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Handleri za promenu vrednosti u formi
+    const handleDelete = async (id) => {
+        if (window.confirm('Da li ste sigurni?')) {
+            try {
+                await deleteEvent(id);
+                if (events.length === 1 && currentPage > 1) {
+                    setCurrentPage(currentPage - 1);
+                } else {
+                    await loadInitialData(currentPage);
+                }
+                // eslint-disable-next-line no-unused-vars
+            } catch (err) {
+                setError('Greška pri brisanju.');
+            }
+        }
+    };
+
+    // Ostale handler funkcije (handleSubmit, handleEdit, handleShowRsvps, etc.) ostaju iste...
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setCurrentEvent({ ...currentEvent, [name]: value });
@@ -92,7 +95,6 @@ function EventsPage() {
         setCurrentEvent({ ...currentEvent, tagIds: selectedIds });
     };
 
-    // Slanje forme (kreiranje ili ažuriranje)
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -120,8 +122,6 @@ function EventsPage() {
         try {
             await action;
             resetForm();
-            // Ako smo dodali novi događaj, vrati se na prvu stranicu da ga vidimo
-            // Ako smo ažurirali, osveži trenutnu stranicu
             if (!isEditing && currentPage !== 1) {
                 setCurrentPage(1);
             } else {
@@ -133,7 +133,6 @@ function EventsPage() {
         }
     };
 
-    // Priprema forme za izmenu
     const handleEdit = async (eventToEdit) => {
         try {
             const { data: fullEvent } = await getEventById(eventToEdit.id);
@@ -155,24 +154,6 @@ function EventsPage() {
         }
     };
 
-    // Brisanje događaja
-    const handleDelete = async (id) => {
-        if (window.confirm('Da li ste sigurni da želite da obrišete ovaj događaj?')) {
-            try {
-                await deleteEvent(id);
-                // Ako je obrisana poslednja stavka na stranici, a to nije prva stranica, vrati se nazad.
-                if (events.length === 1 && currentPage > 1) {
-                    setCurrentPage(currentPage - 1);
-                } else {
-                    await loadInitialData(currentPage); // U suprotnom, osveži trenutnu
-                }
-                // eslint-disable-next-line no-unused-vars
-            } catch (err) {
-                setError('Greška pri brisanju događaja.');
-            }
-        }
-    };
-
     const handleShowRsvps = async (eventId) => {
         try {
             const event = events.find(e => e.id === eventId);
@@ -186,7 +167,6 @@ function EventsPage() {
         }
     };
 
-    // Resetovanje forme na početne vrednosti
     const resetForm = () => {
         setIsEditing(false);
         setCurrentEvent({
@@ -256,19 +236,26 @@ function EventsPage() {
                                 <th>Naslov</th>
                                 <th>Kategorija</th>
                                 <th>Datum Održavanja</th>
+                                <th>Prijave</th>
                                 <th>Akcije</th>
                             </tr>
                             </thead>
                             <tbody>
                             {events.map((event) => (
                                 <tr key={event.id}>
-                                    <td>{event.naslov}</td>
+                                    <td>
+                                        {/* Naslov je sada link koji otvara u novom tabu */}
+                                        <Link to={`/events/${event.id}`} target="_blank" rel="noopener noreferrer">
+                                            {event.naslov}
+                                        </Link>
+                                    </td>
                                     <td>{event.categoryName}</td>
                                     <td>{new Date(event.datumOdrzavanja).toLocaleString()}</td>
                                     <td>
                                         {event.maxKapacitet != null ?
-                                            <button onClick={() => handleShowRsvps(event.id)}>Pregled Prijava</button> :
-                                            'N/A'
+                                            <button onClick={() => handleShowRsvps(event.id)} className="btn-edit" style={{backgroundColor: '#17a2b8', borderColor: '#17a2b8', color: 'white'}}>
+                                                Pregled Prijava
+                                            </button> : 'N/A'
                                         }
                                     </td>
                                     <td className="actions">
@@ -279,6 +266,7 @@ function EventsPage() {
                             ))}
                             </tbody>
                         </table>
+
                         {/* Kontrole za paginaciju */}
                         {totalPages > 1 && (
                             <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>

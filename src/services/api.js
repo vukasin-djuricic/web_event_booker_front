@@ -26,12 +26,14 @@ export const getTopReactedEvents = () => apiClient.get('/events/top-reacted');
 export const getMostVisitedEvents = () => apiClient.get('/events/most-visited');
 export const getAllEvents = (page = 1, limit = 10) => apiClient.get(`/events?page=${page}&limit=${limit}`);
 export const getEventById = (id) => apiClient.get(`/events/${id}`);
-export const searchEvents = (query) => apiClient.get(`/events/search?query=${query}`);
-export const createEvent = (eventData) => apiClient.post('/events', eventData);
+export const searchEvents = (query, page = 1, limit = 9) =>
+    apiClient.get(`/events/search?query=${query}&page=${page}&limit=${limit}`);export const createEvent = (eventData) => apiClient.post('/events', eventData);
 export const updateEvent = (id, eventData) => apiClient.put(`/events/${id}`, eventData);
 export const deleteEvent = (id) => apiClient.delete(`/events/${id}`);
-export const getEventsByCategory = (categoryId) => apiClient.get(`/events/category/${categoryId}`);
-export const getEventsByTag = (tagId) => apiClient.get(`/tags/${tagId}/events`);
+export const getEventsByCategory = (categoryId, page = 1, limit = 9) =>
+    apiClient.get(`/events/category/${categoryId}?page=${page}&limit=${limit}`);
+export const getEventsByTag = (tagId, page = 1, limit = 9) =>
+    apiClient.get(`/tags/${tagId}/events?page=${page}&limit=${limit}`);
 export const incrementView = (id) => apiClient.post(`/events/${id}/view`);
 export const likeEvent = (id) => apiClient.post(`/events/${id}/like`);
 export const dislikeEvent = (id) => apiClient.post(`/events/${id}/dislike`);

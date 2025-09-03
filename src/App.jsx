@@ -18,6 +18,7 @@ import TagEventsPage from "./pages/TagEventsPage.jsx";
 import CategoryEventsPage from "./pages/CategoryEventsPage.jsx";
 import MostVisitedPage from "./pages/MostVisitedPage.jsx";
 import TopReactionsBlock from "./components/TopReactionsBlock.jsx";
+import EmsSearchPage from "./pages/EmsSearchPage.jsx";
 
 function App() {
     return (
@@ -36,6 +37,11 @@ function App() {
 
 
                     {/* EMS Rute (zaštićene) */}
+                    <Route path="/ems/search" element={ // NOVA RUTA
+                        <ProtectedRoute allowedRoles={['ADMIN', 'EVENT_CREATOR']}>
+                            <EmsSearchPage />
+                        </ProtectedRoute>
+                    } />
                     <Route path="/dashboard" element={
                         <ProtectedRoute allowedRoles={['ADMIN', 'EVENT_CREATOR']}>
                             <DashboardPage />

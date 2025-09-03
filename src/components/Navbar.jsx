@@ -35,7 +35,9 @@ function Navbar() {
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            navigate(`/search?query=${searchQuery.trim()}`);
+            // ODLUČUJEMO GDE DA NAVIGIRAMO
+            const searchPath = user ? '/ems/search' : '/search';
+            navigate(`${searchPath}?query=${searchQuery.trim()}`);
             setSearchQuery('');
         }
     };
