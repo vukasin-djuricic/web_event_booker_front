@@ -78,17 +78,23 @@ function CategoriesPage() {
     const handleDelete = async (id) => {
         if (window.confirm('Da li ste sigurni da želite da obrišete ovu kategoriju?')) {
             try {
+                setError(''); // Očisti prethodne greške
                 await deleteCategory(id);
-                // Ako je obrisana poslednja stavka na stranici, a to nije prva stranica, vrati se nazad.
+
                 if (categories.length === 1 && currentPage > 1) {
                     setCurrentPage(currentPage - 1);
                 } else {
-                    // U suprotnom, samo osveži trenutnu stranicu.
                     await fetchCategories(currentPage);
                 }
-                // eslint-disable-next-line no-unused-vars
             } catch (err) {
-                setError('Nije moguće obrisati kategoriju koja je u upotrebi.');
+                // ===== AŽURIRAN BLOK ZA RUKOVANJE GREŠKAMA =====
+                if (err.response && err.response.status === 409) {
+                    // Hvatamo specifičnu grešku koju vraća server
+                    setError(err.response.data);
+                } else {
+                    // Generička poruka za sve ostale greške
+                    setError('Došlo je do greške prilikom brisanja.');
+                }
             }
         }
     };

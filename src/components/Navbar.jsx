@@ -1,9 +1,10 @@
 // src/components/Navbar.jsx
+
 import { useState, useEffect, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { getAllCategories, getAllTags } from '../services/api';
-import Modal from './Modal'; // <<===== OVDE JE KLJUČNA ISPRAVKA
+import Modal from './Modal';
 import './Navbar.css';
 
 function Navbar() {
@@ -17,11 +18,22 @@ function Navbar() {
     useEffect(() => {
         const fetchFilters = async () => {
             try {
-                const [catRes, tagRes] = await Promise.all([getAllCategories(), getAllTags()]);
-                setCategories(catRes.data);
-                setTags(tagRes.data);
+                // Pozivamo API sa velikim limitom da dobijemo sve kategorije za filter
+                const [catRes, tagRes] = await Promise.all([
+                    getAllCategories(1, 200), // Dovoljno veliki limit
+                    getAllTags()
+                ]);
+
+                // ===== ISPRAVKA =====
+                if (catRes.data && catRes.data.data) {
+                    setCategories(catRes.data.data);
+                }
+
+                if (tagRes.data) { // Tagovi nisu paginirani, pa proveravamo samo data
+                    setTags(tagRes.data);
+                }
             } catch (error) {
-                console.error("Greška pri učitavanju filtera:", error);
+                console.error("Greška pri učitavanju filtera za navigaciju:", error);
             }
         };
         fetchFilters();
@@ -35,7 +47,6 @@ function Navbar() {
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            // ODLUČUJEMO GDE DA NAVIGIRAMO
             const searchPath = user ? '/ems/search' : '/search';
             navigate(`${searchPath}?query=${searchQuery.trim()}`);
             setSearchQuery('');
@@ -54,7 +65,7 @@ function Navbar() {
                     <form onSubmit={handleSearchSubmit}>
                         <input
                             type="text"
-                            placeholder="Pretraži po naslovu/opisu..."
+                            placeholder="Pretraži događaje..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             style={{ padding: '0.5rem', minWidth: '300px' }}
@@ -84,13 +95,14 @@ function Navbar() {
             <Modal isOpen={isFilterModalOpen} onClose={() => setFilterModalOpen(false)} title="Filteri">
                 <h4>Kategorije</h4>
                 <ul className="filter-list">
-                    {categories?.data?.map(cat => (
-                                <li key={`cat-${cat.id}`}>
-                                    <Link to={`/category/${cat.id}`} onClick={() => setFilterModalOpen(false)}>
-                                        {cat.name}
-                                    </Link>
-                                </li>
-                            ))}
+                    {/* ===== ISPRAVKA ===== */}
+                    {categories.map(cat => (
+                        <li key={`cat-${cat.id}`}>
+                            <Link to={`/category/${cat.id}`} onClick={() => setFilterModalOpen(false)}>
+                                {cat.name}
+                            </Link>
+                        </li>
+                    ))}
                 </ul>
                 <hr style={{margin: '1.5rem 0'}} />
                 <h4>Tagovi</h4>

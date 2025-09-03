@@ -1,10 +1,20 @@
 // src/pages/AdminUsersPage.jsx
+
 import { useState, useEffect } from 'react';
 import { getAllUsers, createUser, updateUser, toggleUserStatus } from '../services/api';
 import './Table.css';
 import './Form.css';
 
-const initialFormState = { id: null, ime: '', prezime: '', email: '', userType: 'EVENT_CREATOR', lozinka: '' };
+// ===== ISPRAVKA: DEKLARACIJA PREMEŠTENA OVDE =====
+const initialFormState = {
+    id: null,
+    ime: '',
+    prezime: '',
+    email: '',
+    userType: 'EVENT_CREATOR',
+    lozinka: '',
+    potvrdaLozinke: ''
+};
 
 function AdminUsersPage() {
     const [users, setUsers] = useState([]);
@@ -39,10 +49,19 @@ function AdminUsersPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+
+        if (!isEditing && currentUser.lozinka !== currentUser.potvrdaLozinke) {
+            setError('Lozinke se ne poklapaju.');
+            return;
+        }
+
+        const userData = { ...currentUser };
+        delete userData.potvrdaLozinke;
 
         const action = isEditing
-            ? updateUser(currentUser.id, { ime: currentUser.ime, prezime: currentUser.prezime, email: currentUser.email, userType: currentUser.userType })
-            : createUser(currentUser);
+            ? updateUser(currentUser.id, { ime: userData.ime, prezime: userData.prezime, email: userData.email, userType: userData.userType })
+            : createUser(userData);
 
         try {
             await action;
@@ -55,7 +74,7 @@ function AdminUsersPage() {
 
     const handleEdit = (user) => {
         setIsEditing(true);
-        setCurrentUser({ ...user, lozinka: '' }); // Ne prikazujemo lozinku pri izmeni
+        setCurrentUser({ ...user, lozinka: '', potvrdaLozinke: '' });
         window.scrollTo(0, 0);
     };
 
@@ -66,8 +85,7 @@ function AdminUsersPage() {
         }
         if (window.confirm(`Da li ste sigurni da želite da ${user.active ? 'deaktivirate' : 'aktivirate'} nalog ${user.email}?`)) {
             try {
-                // Napomena: Ovaj endpoint treba dodati na backend
-                await toggleUserStatus(user.id, !user.active);
+                await toggleUserStatus(user.id);
                 await fetchUsers();
                 // eslint-disable-next-line no-unused-vars
             } catch (err) {
@@ -109,10 +127,22 @@ function AdminUsersPage() {
                         </select>
                     </div>
                     {!isEditing && (
-                        <div className="form-group">
-                            <label htmlFor="lozinka">Lozinka</label>
-                            <input type="password" name="lozinka" value={currentUser.lozinka} onChange={handleInputChange} required />
-                        </div>
+                        <>
+                            <div className="form-group">
+                                <label htmlFor="lozinka">Lozinka</label>
+                                <input type="password" name="lozinka" value={currentUser.lozinka} onChange={handleInputChange} required />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="potvrdaLozinke">Potvrdi Lozinku</label>
+                                <input
+                                    type="password"
+                                    name="potvrdaLozinke"
+                                    value={currentUser.potvrdaLozinke}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </div>
+                        </>
                     )}
                     <button type="submit">{isEditing ? 'Sačuvaj Izmene' : 'Dodaj Korisnika'}</button>
                     {isEditing && <button type="button" onClick={resetForm} style={{ marginLeft: '1rem', backgroundColor: '#6c757d' }}>Otkaži</button>}
